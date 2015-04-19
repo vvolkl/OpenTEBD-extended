@@ -100,6 +100,12 @@ CALL CreateHeisenbergOps()
 !Create the Hamiltonian
 CALL HamiltonianHeisenberg(H , 1.0_rKind, 1.0_rKind, 0.0_rKind)
 
+write(*,*) SHAPE(H)
+write(*,*) 'dumping H matrix ...'
+!DO i=1,systemSize,1
+write(*,*) REAL(H(2)%m)
+!end do
+
 !Allocate the Gammas, Labdas, and labels
 CALL AllocateGamLam(Gammas, Lambdas, chiMax)
 
@@ -119,10 +125,21 @@ DO i=1,systemSize,1
 	END IF
 END DO
 
+!write(*,*) coefArray(1,20)
+!write(*,*) coefArray(2,20)
 !Imprint the state on Lambdas & Gammas
 CALL ProductStateMPD(Gammas, Lambdas, coefArray)
 
-
+!DO i=1,systemSize,1
+!write(*,*) Gammas(i)%t(1,1,1)
+!write(*,*) Gammas(i)%t(1,2,1)
+!end do
+write(*,*) Gammas(49)%t(1,1,1)
+write(*,*) Gammas(49)%t(1,2,1)
+write(*,*) Gammas(50)%t(1,1,1)
+write(*,*) Gammas(50)%t(1,2,1)
+write(*,*) Gammas(51)%t(1,1,1)
+write(*,*) Gammas(51)%t(1,2,1)
 !Initialize time and cumulative truncation error
 time=0.0_rKind
 totalTruncerr=0.0_rKind

@@ -1,0 +1,22 @@
+README for Heisenberg_Wrapper
+Author:  M. L. Wall
+Date:  9.28.09
+
+
+SUMMARY:
+This wrapper contains main programs that demonstrate how to use the Open Source TEBD software in the context of the Heisenberg spin chain.
+
+COMPILATION DIRECTIONS:
+A makefile is included.  The primary rules are:
+1. 'make XX'
+This command will compile the main program XXDynamics.f90, which time evolves an initial state with one domain wall according to the XX Hamiltonian.  The associated executable is Execute_XX.  The data is stored in the directory 'RTPDATA'.
+
+2. 'make clean'
+This command will remove all .mod and .o files.
+
+3. 'make touch'
+This command will force recompilation of all objects at the next make command.
+
+RUNNING CODE:
+To run the executable 'Execute_*', type './Execute_*'.
+

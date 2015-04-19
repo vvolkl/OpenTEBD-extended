@@ -1,0 +1,25 @@
+README for Bose_Hubbard_Wrapper
+Author:  M. L. Wall
+Date:  9.28.09
+
+
+SUMMARY:
+This wrapper contains main programs that demonstrate how to use the Open Source TEBD software in the context of the Bose-Hubbard model.
+
+COMPILATION DIRECTIONS:
+A makefile is included.  The primary rules are:
+1. 'make ITP'
+This command will compile the main program BoseHubbard_ITP.f90, which computes ground state properties of the Bose Hubbard model.  The associated executable is Execute_ITP.  The data is stored in the directory 'ITPDATA'.
+
+2. 'make Quench'
+This command will compile the main program BoseHubbard_Quench.f90, which computes the ground state of the Bose hubbard model in the Mott phase, and then quenches it linearly through the superfluid transition and back.  The associated executable is Execute_Quench.  The data is stored in the directory 'RTPDATA'.
+
+3. 'make clean'
+This command will remove all .mod and .o files.
+
+4. 'make touch'
+This command will force recompilation of all objects at the next make command.
+
+RUNNING CODE:
+To run the executable 'Execute_*', type './Execute_*'.
+

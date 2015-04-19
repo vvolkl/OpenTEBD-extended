@@ -1,0 +1,11 @@
+&SystemSettings
+ systemSize=10, maxFilling=2, totNum=10, BoundaryCond='O', trotterOrder=5
+&end
+
+&BHParams
+ jTunn=1.0, U0=20.0, V0=0.0, mu0=0.0
+&end
+
+&ITPParams
+ chiMin=15, chiMax=20, convCriterion1=0.00001, convCriterion2=0.0000001, stepsForJudge=100, dtITP=0.05, maxITPsteps=4000, itpDir='ITPDATA/'
+&end

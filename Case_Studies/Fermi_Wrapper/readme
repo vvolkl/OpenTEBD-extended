@@ -1,0 +1,22 @@
+README for Fermi_Wrapper
+Author:  M. L. Wall
+Date:  9.28.09
+
+
+SUMMARY:
+This wrapper contains main programs that demonstrate how to use the Open Source TEBD software in the context of a spinless fermi gas.
+
+COMPILATION DIRECTIONS:
+A makefile is included.  The primary rules are:
+1. 'make ITP'
+This command will compile the main program FermionITP.f90, which computes ground state properties of the Bose Hubbard model.  The associated executable is Execute_ITP.  The data is stored in the directory 'ITPDATA'.
+
+2. 'make clean'
+This command will remove all .mod and .o files.
+
+3. 'make touch'
+This command will force recompilation of all objects at the next make command.
+
+RUNNING CODE:
+To run the executable 'Execute_*', type './Execute_*'.
+

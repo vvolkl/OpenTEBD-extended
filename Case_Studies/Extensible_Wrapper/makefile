@@ -1,8 +1,9 @@
 #Makefile for the Heisenberg Case Study Wrapper
 #----------------------------------------------
 OFLAGS = -O3 -ffree-line-length-none #Set the optimization flags
-LIBFLAGS = -llapack -lblas #Link the LAPACK and BLAS libraries
-MC = gfortran #Specify the compiler
+LIBFLAGS = # -llapack -lblas #Link the LAPACK and BLAS libraries
+lgfortran=gfortran  ${F95ROOT}/lib/intel64/libmkl_blas95_lp64.a -Wl,--no-as-needed -L${MKLROOT}/lib/intel64 -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lpthread -lm  -I${F95ROOT}/include/intel64/lp64 -m64 -I${MKLROOT}/include
+MC = $(lgfortran) #Specify the compiler
 
 #-----------------------------------
 #List objects

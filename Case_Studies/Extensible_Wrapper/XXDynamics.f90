@@ -134,12 +134,14 @@ CALL ProductStateMPD(Gammas, Lambdas, coefArray)
 !write(*,*) Gammas(i)%t(1,1,1)
 !write(*,*) Gammas(i)%t(1,2,1)
 !end do
-write(*,*) Gammas(49)%t(1,1,1)
-write(*,*) Gammas(49)%t(1,2,1)
-write(*,*) Gammas(50)%t(1,1,1)
-write(*,*) Gammas(50)%t(1,2,1)
-write(*,*) Gammas(51)%t(1,1,1)
-write(*,*) Gammas(51)%t(1,2,1)
+
+write(*,*) SHAPE(Gammas(49)%t)
+!write(*,*) Gammas(49)%t(1,1,1)
+!write(*,*) Gammas(49)%t(1,2,1)
+!write(*,*) Gammas(50)%t(1,1,1)
+!write(*,*) Gammas(50)%t(1,2,1)
+!write(*,*) Gammas(51)%t(1,1,1)
+!write(*,*) Gammas(51)%t(1,2,1)
 !Initialize time and cumulative truncation error
 time=0.0_rKind
 totalTruncerr=0.0_rKind

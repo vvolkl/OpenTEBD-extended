@@ -56,6 +56,8 @@ propagation_module.o : ../../VidalCore_v_2.0/propagation_module.f90
 XXDynamics.o : XXDynamics.f90
 		$(MC) $(OFLAGS) -c XXDynamics.f90
 
+TEBDSolve.o : TEBDSolve.f90
+		$(MC) $(OFLAGS) -c TEBDSolve.f90
 XXZ_ITP_block.o : XXZ_ITP_block.f90
 		$(MC) $(OFLAGS) -c XXZ_ITP_block.f90
 
@@ -66,6 +68,8 @@ XXZ_ITP_block.o : XXZ_ITP_block.f90
 XX :  $(OBJS) XXDynamics.o
 	$(MC) $(OFLAGS)  -o Execute_XX XXDynamics.o $(OBJS) $(LIBFLAGS)
 
+Solver :  $(OBJS) TEBDSolve.o
+	$(MC) $(OFLAGS)  -o Execute_TEBDSolve TEBDSolve.o $(OBJS) $(LIBFLAGS)
 XXZblock :  $(OBJS) XXZ_ITP_block.o
 	$(MC) $(OFLAGS)  -o Execute_XXZ_block XXZ_ITP_block.o $(OBJS) $(LIBFLAGS)
 

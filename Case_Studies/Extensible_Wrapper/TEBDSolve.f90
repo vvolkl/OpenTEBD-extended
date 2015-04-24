@@ -13,7 +13,7 @@
 
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-PROGRAM XXDynamics
+PROGRAM TEBDSolve
 !
 ! Purpose: Main program to compute the dynamics of the Bose
 ! Hubbard model during a parameter quench for OpenSourceTEBD v1.0 Case Study.
@@ -50,12 +50,17 @@ COMPLEX(KIND=rKIND), ALLOCATABLE :: coefArray(:,:)
 REAL(KIND=RKIND), ALLOCATABLE :: mag(:)
 CHARACTER(len=132) :: localName, avgName, CorrName, entName, stub !File names
 INTEGER :: i,j,k !Dummy integers
+! helper variables
 INTEGER :: ii, jj, kk
+!REAL :: HtempIm(4,4)
+!REAL :: HtempRe(4,4)
+REAL, allocatable :: HtempIm(:,:)
+REAL, allocatable :: HtempRe(:,:)
 !Read in input parameters
-NAMELIST /SystemSettings/ systemSize,spin,  BoundaryCond, trotterOrder
-NAMELIST /RTPParams/ chiMax,dtrtpin,totaltime,  stepsForStore
+NAMELIST /SystemSettings/ systemSize, spin, BoundaryCond, trotterOrder
+NAMELIST /RTPParams/ chiMax, dtrtpin,totaltime, stepsForStore
 
-OPEN(138,file='XXDynamics.nml')
+OPEN(138,file='TEBDSolve.nml')
 READ(138,SystemSettings)
 READ(138,RTPParams)
 CLOSE(138)
@@ -75,7 +80,7 @@ totalStep=FLOOR(totaltime/REAL(dtRTP))
 
 
 IF(print_Switch) THEN
-PRINT *, 'Beginning XX dynamics Case study.'
+PRINT *, 'Beginning TEBD simulation.'
 PRINT *, systemSize,'sites',spin,'spin'
 PRINT *, 'Order of trotter expansion',trotterOrder
 IF(BoundaryCond=='O') THEN
@@ -96,26 +101,59 @@ ELSE
 	CALL AllocateOps(H,systemSize,localSize*localSize)
 END IF
 
+allocate(HtempIm( localSize*localSize,  localSize*localSize))
+allocate(HtempRe( localSize*localSize,  localSize*localSize))
+
 CALL CreateHeisenbergOps()
 !Create the Hamiltonian
-CALL HamiltonianHeisenberg(H , 1.0_rKind, 1.0_rKind, 0.0_rKind)
+!CALL HamiltonianHeisenberg(H , 1.0_rKind, 1.0_rKind, 0.0_rKind)
 
-open(unit=11, file='test.dat')
-write(*,*) SHAPE(H(1)%m)
-write(*,*) REAL(H(1)%m)
-write(*,*) AIMAG(H(1)%m)
-write(*,*) 'dumping H matrix ... REAL'
+
+open(unit=11, file='Liouvillean_LEFT_IMAG.in')
+read(11,*) HtempRe
+close(11)
+open(unit=11, file='Liouvillean_LEFT_REAL.in')
+read(11,*) HtempIm
+close(11)
+H(1)%m = HtempRe + COMPLEX(0,1) * HtempIm
+
+do ii=2,systemSize-2
+open(unit=11, file='Liouvillean_BULK_IMAG.in')
+read(11,*) HtempRe
+close(11)
+open(unit=11, file='Liouvillean_BULK_REAL.in')
+read(11,*) HtempIm
+close(11)
+H(ii)%m = HtempRe + COMPLEX(0,1) * HtempIm
+end do
+
+open(unit=11, file='Liouvillean_RIGHT_IMAG.in')
+read(11,*) HtempRe
+close(11)
+open(unit=11, file='Liouvillean_RIGHT_REAL.in')
+read(11,*) HtempIm
+close(11)
+H(systemSize-1)%m = HtempRe + COMPLEX(0,1) * HtempIm
+
+!write(*,*) REAL(H(1)%m)
+!write(*,*) AIMAG(H(1)%m)
+write(*,*) 'dumping H matrix ...'
 !DO i=1,systemSize,1
 !end do
+open(unit=11, file='hamtest.dat')
+
+kk =1 
+write(*,*) 'dumping H matrix ... REAL'
 do ii=1,localSize*localSize
-write(*,'(16(F10.5))') (REAL(H(1)%m(jj,ii)), jj=1,localSize*localSize)
+write(*,'(16(F10.5))') (REAL(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
 end do
 
 write(*,*) 'dumping H matrix ... IMAG'
 do ii=1,localSize*localSize
-write(*,'(16(F10.5))') (IMAG(H(1)%m(jj,ii)), jj=1,localSize*localSize)
+write(*,'(16(F10.5))') (AIMAG(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
 end do
 close(unit=11)
+
 
 write(*,*) 'H matrix dumped ...'
 !Allocate the Gammas, Labdas, and labels
@@ -237,4 +275,4 @@ CALL CPU_TIME(tock)
 PRINT *, 'XX dynamics Case study exited normally!'
 PRINT *, 'Time taken=',tock-tick,'seconds!'
 
-END PROGRAM XXDynamics
+END PROGRAM TEBDSolve

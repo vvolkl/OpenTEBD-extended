@@ -1,3 +1,6 @@
+
+
+
 !    Copyright (C) 2009  M. L. Wall
 !    This file is part of OpenSourceTEBD.
 !
@@ -38,6 +41,7 @@ USE observables_module
 USE propagation_module
 
 
+
 IMPLICIT NONE
 TYPE(tensor), POINTER :: Gammas(:),Gammas0(:) !List of gamma tensors
 TYPE(vector), POINTER :: Lambdas(:),Lambdas0(:) !List of Lambda vectors
@@ -47,6 +51,7 @@ REAL(KIND=rKind) ::  time, totaltime, totalTruncerr, localTruncerr !Time, total 
 REAL(KIND=rKind) :: energy, number, dtrtpin !Observables
 REAL(KIND=rKIND) :: tick, tock !Timing Variables
 COMPLEX(KIND=rKIND), ALLOCATABLE :: coefArray(:,:)
+REAL(KIND=rKIND), ALLOCATABLE :: coefArrayRe(:,:)
 REAL(KIND=RKIND), ALLOCATABLE :: mag(:)
 CHARACTER(len=132) :: localName, avgName, CorrName, entName, stub !File names
 INTEGER :: i,j,k !Dummy integers
@@ -56,6 +61,10 @@ INTEGER :: ii, jj, kk
 !REAL :: HtempRe(4,4)
 REAL, allocatable :: HtempIm(:,:)
 REAL, allocatable :: HtempRe(:,:)
+real :: tr
+
+
+
 !Read in input parameters
 NAMELIST /SystemSettings/ systemSize, spin, BoundaryCond, trotterOrder
 NAMELIST /RTPParams/ chiMax, dtrtpin,totaltime, stepsForStore
@@ -109,48 +118,50 @@ CALL CreateHeisenbergOps()
 !CALL HamiltonianHeisenberg(H , 1.0_rKind, 1.0_rKind, 0.0_rKind)
 
 
-open(unit=11, file='Liouvillean_LEFT_IMAG.in')
+open(unit=11, file='Liouvillean_left_IMAG.dat')
 read(11,*) HtempRe
 close(11)
-open(unit=11, file='Liouvillean_LEFT_REAL.in')
+open(unit=11, file='Liouvillean_left_REAL.dat')
 read(11,*) HtempIm
 close(11)
 H(1)%m = HtempRe + COMPLEX(0,1) * HtempIm
 
 do ii=2,systemSize-2
-open(unit=11, file='Liouvillean_BULK_IMAG.in')
+open(unit=11, file='Liouvillean_bulk_IMAG.dat')
 read(11,*) HtempRe
 close(11)
-open(unit=11, file='Liouvillean_BULK_REAL.in')
+open(unit=11, file='Liouvillean_bulk_REAL.dat')
 read(11,*) HtempIm
 close(11)
 H(ii)%m = HtempRe + COMPLEX(0,1) * HtempIm
 end do
 
-open(unit=11, file='Liouvillean_RIGHT_IMAG.in')
+open(unit=11, file='Liouvillean_right_IMAG.dat')
 read(11,*) HtempRe
 close(11)
-open(unit=11, file='Liouvillean_RIGHT_REAL.in')
+open(unit=11, file='Liouvillean_right_REAL.dat')
 read(11,*) HtempIm
 close(11)
-H(systemSize-1)%m = HtempRe + COMPLEX(0,1) * HtempIm
+H(systemSize-1)%m =  HtempRe + COMPLEX(0,1) * HtempIm
 
 !write(*,*) REAL(H(1)%m)
 !write(*,*) AIMAG(H(1)%m)
 write(*,*) 'dumping H matrix ...'
 !DO i=1,systemSize,1
 !end do
-open(unit=11, file='hamtest.dat')
+open(unit=11, file='hamtestreal.dat')
 
 kk =1 
 write(*,*) 'dumping H matrix ... REAL'
 do ii=1,localSize*localSize
-write(*,'(16(F10.5))') (REAL(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
+write(11,'(16(F10.5))') (REAL(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
 end do
 
+close(unit=11)
+open(unit=11, file='hamtestimag.dat')
 write(*,*) 'dumping H matrix ... IMAG'
 do ii=1,localSize*localSize
-write(*,'(16(F10.5))') (AIMAG(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
+write(11,'(16(F10.5))') (AIMAG(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
 end do
 close(unit=11)
 
@@ -161,6 +172,7 @@ CALL AllocateGamLam(Gammas, Lambdas, chiMax)
 
 !Allocate a matrix to imprint the initial state
 ALLOCATE(coefArray(localSize,systemSize))
+ALLOCATE(coefArrayRe(localSize,systemSize))
 ALLOCATE(mag(systemSize))
 
 !Define the step state consisting of spins aligned with local magnetization 0.5
@@ -168,12 +180,21 @@ ALLOCATE(mag(systemSize))
 !to the right of the center 
 DO i=1,systemSize,1
 	coefArray(:,i)=0.0_rKind
-	IF(i.le.FLOOR(0.5_rKind*systemSize)) THEN
+	!IF(i.le.FLOOR(0.5_rKind*systemSize)) THEN
 	coefArray(1,i)=1.0_rKind
-	ELSE
-	coefArray(2,i)=1.0_rKind
-	END IF
+	!ELSE
+	!coefArray(2,i)=1.0_rKind
+	!END IF
 END DO
+!OPEN(unit=12, file='initialStatCoeffTest.dat')
+!do ii=1,localsize
+!READ(12, * ) coefArrayRe(ii, :)
+!end do
+!CLOSE(12)
+
+coefArray = coefArray + coefArrayRe
+write(*,*) 'coefArray as read from file'
+write(*,*) Real(coefArray(1,:))
 
 !write(*,*) coefArray(1,20)
 !write(*,*) coefArray(2,20)
@@ -236,8 +257,8 @@ CALL openUnit(avgName,100,'A')
 !CALL TotalEnergy(energy,H, Gammas, Lambdas)
 !CALL OneSiteExpVal(mag,Sz_opS, Gammas, Lambdas)
 
-OPEN(unit=12, file='schmidttest.dat',status='old', Access='append', form='unformatted')
-WRITE(12) (Lambdas(ii)%v, ii = 1, systemSize)
+OPEN(unit=12, file='schmidttest.dat',status='old', Access='append')
+WRITE(12, *) (Lambdas(ii)%v, ii = 1, systemSize)
 CLOSE(12)
 OPEN(unit=13, file='gammatest.dat',status='old', Access='append', form='unformatted')
 WRITE(13) (Gammas(ii)%t , ii = 1,systemSize)
@@ -249,6 +270,11 @@ IF(print_switch) THEN
 PRINT *, 'RTP step',i,' time =',time
 PRINT *, ' truncation error this step is', localTruncerr, 'cumulative truncation error is', totalTruncerr
 PRINT *,  (Lambdas(floor(systemSize * 0.5))%v(kk), kk=1,10)
+
+PRINT *, 'test measurement routine'
+PRINT *, shape(Gammas(1)%t)
+call  mpstrace(Gammas, Lambdas, systemSize, localSize, chiMax,chiMax, tr)
+PRINT *, tr
 
 END IF
 		END IF
@@ -275,4 +301,48 @@ CALL CPU_TIME(tock)
 PRINT *, 'XX dynamics Case study exited normally!'
 PRINT *, 'Time taken=',tock-tick,'seconds!'
 
+contains
+subroutine mpstrace(Gammas, Lambdas, length, d2, chi1, chi2, tr)
+
+    implicit none
+    integer, intent(in)                         ::  length, d2, chi1, chi2
+    TYPE(tensor), POINTER, intent(in) :: Gammas(:)
+    TYPE(vector), POINTER, intent(in) :: Lambdas(:)
+    complex    ::  mtx3(chi1, chi2)
+    integer :: i,j, k
+    real, intent(out) :: tr
+    tr = 0
+    do i=1,chi1
+    do j=1,chi2
+        mtx3(i,j)=0
+        if (i == j) then
+        mtx3(i,j) = 1
+        end if
+    end do
+    end do
+
+    !do i=1,chi1
+    !write(*,'(5F5.2)') (mtx3(i,j), j=1,chi2)
+    !end do
+    !if(size(mtx1,dim=2) /= size(mtx2,dim=1)) stop "input array sizenot match"
+    do i=1,length
+    !write(*,*) 'site ', i
+    mtx3 =   matmul(mtx3,Gammas(i)%t(:,1,:) + Gammas(i)%t(:,d2,:))
+    do j=1,chi1
+    mtx3(:,j) = mtx3(:,j) *  Lambdas(i)%v(j)
+    end do
+    !write(*,*) 'multiplication done!'
+    !do j=1,m3
+    !write(*,'(5F5.2)') (mtx3(j,k), k=1,m4)
+    !end do
+    end do
+do i=1,chi1
+tr = tr + mtx3(i,i)
+end do
+
+    !do i=1,m3
+    !write(*,'(5F5.2)') (mtx3(i,j), j=1,m4)
+    !end do
+!write(*,*) tr
+end subroutine
 END PROGRAM TEBDSolve

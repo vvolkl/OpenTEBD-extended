@@ -1,7 +1,7 @@
 &SystemSettings
- systemSize=100,  spin=0.5, BoundaryCond='O', trotterOrder=2
+ systemSize=8,  spin=1.5, BoundaryCond='O', trotterOrder=2
 &end
 
 &RTPParams
- chiMax=50, dtrtpin=0.5, totaltime=50.0, stepsForStore=1
+ chiMax=12, dtrtpin=0.01, totaltime=5.0, stepsForStore=1
 &end

@@ -3,5 +3,5 @@
 &end
 
 &RTPParams
- chiMax=12, dtrtpin=0.01, totaltime=5.0, stepsForStore=1
+ chiMax=8, dtrtpin=0.01, totaltime=10.0, stepsForStore=1
 &end

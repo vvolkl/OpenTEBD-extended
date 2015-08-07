@@ -1,6 +1,3 @@
-
-
-
 !    Copyright (C) 2009  M. L. Wall
 !    This file is part of OpenSourceTEBD.
 !
@@ -16,16 +13,20 @@
 
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 PROGRAM TEBDSolve
 !
-! Purpose: Main program to compute the dynamics of the Bose
-! Hubbard model during a parameter quench for OpenSourceTEBD v1.0 Case Study.
+! Purpose: Main program to compute the dynamics of a general Model with an
+! Evolution Operator contained in the Propagator*.dat files.
 !
 ! Record of Revisions
 !	Date	Programmer	Description of change
 !	====	==========	=====================
 !   2/24/09   M. L. Wall	v1.0 release
 !
+! Modified 2015  by V. Volkl 
 
 USE system_parameters
 USE TEBDtools_module
@@ -57,11 +58,11 @@ CHARACTER(len=132) :: localName, avgName, CorrName, entName, stub !File names
 INTEGER :: i,j,k !Dummy integers
 ! helper variables
 INTEGER :: ii, jj, kk
-!REAL :: HtempIm(4,4)
-!REAL :: HtempRe(4,4)
-REAL, allocatable :: HtempIm(:,:)
-REAL, allocatable :: HtempRe(:,:)
-real :: tr
+! matrices to hold real and imaginary part of the evolution operator read from
+! file.
+REAL, allocatable :: UtempIm(:,:)
+REAL, allocatable :: UtempRe(:,:)
+real :: tr, Mz
 
 
 
@@ -110,63 +111,11 @@ ELSE
 	CALL AllocateOps(H,systemSize,localSize*localSize)
 END IF
 
-allocate(HtempIm( localSize*localSize,  localSize*localSize))
-allocate(HtempRe( localSize*localSize,  localSize*localSize))
 
-CALL CreateHeisenbergOps()
+!CALL CreateHeisenbergOps()
 !Create the Hamiltonian
 !CALL HamiltonianHeisenberg(H , 1.0_rKind, 1.0_rKind, 0.0_rKind)
 
-
-open(unit=11, file='Liouvillean_left_IMAG.dat')
-read(11,*) HtempRe
-close(11)
-open(unit=11, file='Liouvillean_left_REAL.dat')
-read(11,*) HtempIm
-close(11)
-H(1)%m = HtempRe + COMPLEX(0,1) * HtempIm
-
-do ii=2,systemSize-2
-open(unit=11, file='Liouvillean_bulk_IMAG.dat')
-read(11,*) HtempRe
-close(11)
-open(unit=11, file='Liouvillean_bulk_REAL.dat')
-read(11,*) HtempIm
-close(11)
-H(ii)%m = HtempRe + COMPLEX(0,1) * HtempIm
-end do
-
-open(unit=11, file='Liouvillean_right_IMAG.dat')
-read(11,*) HtempRe
-close(11)
-open(unit=11, file='Liouvillean_right_REAL.dat')
-read(11,*) HtempIm
-close(11)
-H(systemSize-1)%m =  HtempRe + COMPLEX(0,1) * HtempIm
-
-!write(*,*) REAL(H(1)%m)
-!write(*,*) AIMAG(H(1)%m)
-write(*,*) 'dumping H matrix ...'
-!DO i=1,systemSize,1
-!end do
-open(unit=11, file='hamtestreal.dat')
-
-kk =1 
-write(*,*) 'dumping H matrix ... REAL'
-do ii=1,localSize*localSize
-write(11,'(16(F10.5))') (REAL(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
-end do
-
-close(unit=11)
-open(unit=11, file='hamtestimag.dat')
-write(*,*) 'dumping H matrix ... IMAG'
-do ii=1,localSize*localSize
-write(11,'(16(F10.5))') (AIMAG(H(kk)%m(jj,ii)), jj=1,localSize*localSize)
-end do
-close(unit=11)
-
-
-write(*,*) 'H matrix dumped ...'
 !Allocate the Gammas, Labdas, and labels
 CALL AllocateGamLam(Gammas, Lambdas, chiMax)
 
@@ -192,8 +141,8 @@ END DO
 !end do
 !CLOSE(12)
 
-coefArray = coefArray + coefArrayRe
-write(*,*) 'coefArray as read from file'
+!coefArray = coefArray + coefArrayRe
+!write(*,*) 'coefArray as read from file'
 write(*,*) Real(coefArray(1,:))
 
 !write(*,*) coefArray(1,20)
@@ -217,11 +166,64 @@ totalTruncerr=0.0_rKind
 
 !Allocate and construct real time propagator
 CALL AllocateProp(Urtp)
-CALL ConstructPropagators(H, Urtp, dtrtp)
+!CALL ConstructPropagators(H, Urtp, dtrtp)
+
+
+allocate(UtempIm( localSize*localSize,  localSize*localSize))
+allocate(UtempRe( localSize*localSize,  localSize*localSize))
+open(unit=11, file='Propagator_0.005_left_IMAG.nml')
+read(11,*) UtempIm
+close(11)
+open(unit=11, file='Propagator_0.005_left_REAL.nml')
+read(11,*) UtempRe
+close(11)
+Urtp(1)%m =  UtempRe + COMPLEX(0,1) * UtempIm
+do ii=3,systemSize-2,2
+open(unit=11, file='Propagator_0.005_bulk_IMAG.nml')
+read(11,*) UtempIm
+close(11)
+open(unit=11, file='Propagator_0.005_bulk_REAL.nml')
+read(11,*) UtempRe
+close(11)
+Urtp(ii)%m =  UtempRe + COMPLEX(0,1) * UtempIm
+end do
+do ii=2,systemSize-2,2
+open(unit=11, file='Propagator_0.01_bulk_IMAG.nml')
+read(11,*) UtempIm
+close(11)
+open(unit=11, file='Propagator_0.01_bulk_REAL.nml')
+read(11,*) UtempRe
+close(11)
+Urtp(ii)%m =  UtempRe + COMPLEX(0,1) * UtempIm
+end do
+
+open(unit=11, file='Propagator_0.005_right_IMAG.nml')
+read(11,*) UtempIm
+close(11)
+open(unit=11, file='Propagator_0.005_right_REAL.nml')
+read(11,*) UtempRe
+close(11)
+Urtp(systemSize-1)%m = UtempRe + COMPLEX(0,1) * UtempIm
+
+!open(unit=11, file='hamtestreal.dat')
+!write(*,*) 'dumping U matrix ...'
+!kk =1 
+!write(*,*) 'dumping U matrix ... REAL'
+!do ii=1,localSize*localSize
+!write(11,'(16(F10.5))') (REAL(Urtp(kk)%m(jj,ii)), jj=1,localSize*localSize)
+!end do
+!close(unit=11)
+!open(unit=11, file='hamtestimag.dat')
+!write(*,*) 'dumping U matrix ... IMAG'
+!do ii=1,localSize*localSize
+!write(11,'(16(F10.5))') (AIMAG(Urtp(kk)%m(jj,ii)), jj=1,localSize*localSize)
+!end do
+!close(unit=11)
+!write(*,*) 'U matrix dumped ...'
 
 !Set up i/o
 CALL createFileName(avgname,rtpDir)
-CALL appendBaseName(avgname,'XXDyn_')
+CALL appendBaseName(avgname,'Dyn_')
 CALL appendBaseName(avgname,'L',systemSize)
 CALL appendBaseName(avgname,'Chi',chiMax)
 avgname=TRIM(avgname)//TRIM(ADJUSTL(BoundaryCond))//'BC'
@@ -229,16 +231,18 @@ CALL appendBaseName(avgname,'dt',3,dtrtpin)
 CALL appendBaseName(avgname,'.dat')
 CALL openUnit(avgname,100)
 
-CALL TotalEnergy(energy,H, Gammas, Lambdas)
-CALL OneSiteExpVal(mag,Sz_opS, Gammas, Lambdas)
+!CALL TotalEnergy(energy,H, Gammas, Lambdas)
+!CALL OneSiteExpVal(mag,Sz_opS, Gammas, Lambdas)
 
 WRITE(100,*), time, MeyerQMeasure(Gammas,Lambdas), totalTruncerr, (mag(j),j=FLOOR(0.5_rKind*systemSize),systemSize)
 CLOSE(100)
 
-OPEN(unit=12, file='schmidttest.dat', status='replace')
+OPEN(unit=12, file='RTPDATA/schmidttest.dat', status='replace')
 close(12)
-OPEN(unit=13, file='gammatest.dat', status='replace')
+OPEN(unit=13, file='RTPDATA/Gammatest.dat', status='replace')
 close(13)
+OPEN(unit=14, file='RTPDATA/Mztest.dat', status='replace')
+close(14)
 ! Initialize variables for SVD routine.
 	CALL SVDInit(chiMax)
 
@@ -257,12 +261,13 @@ CALL openUnit(avgName,100,'A')
 !CALL TotalEnergy(energy,H, Gammas, Lambdas)
 !CALL OneSiteExpVal(mag,Sz_opS, Gammas, Lambdas)
 
-OPEN(unit=12, file='schmidttest.dat',status='old', Access='append')
-WRITE(12, *) (Lambdas(ii)%v, ii = 1, systemSize)
+OPEN(unit=12, file='RTPDATA/schmidttest.dat',status='old', Access='append')
+!WRITE(12, *) (Lambdas(ii)%v, ii = 1, systemSize)
+WRITE(12, *) (Lambdas(systemSize / 2)%v)
 CLOSE(12)
-OPEN(unit=13, file='gammatest.dat',status='old', Access='append', form='unformatted')
-WRITE(13) (Gammas(ii)%t , ii = 1,systemSize)
-close(13)
+!OPEN(unit=13, file='gammatest.dat',status='old', Access='append', form='unformatted')
+!WRITE(13) (Gammas(ii)%t , ii = 1,systemSize)
+!close(13)
 !WRITE(100,*), time, MeyerQMeasure(Gammas,Lambdas), totalTruncerr, (mag(j),j=FLOOR(0.5_rKind*systemSize),systemSize)
 !CLOSE(100)
 
@@ -274,7 +279,11 @@ PRINT *,  (Lambdas(floor(systemSize * 0.5))%v(kk), kk=1,10)
 PRINT *, 'test measurement routine'
 PRINT *, shape(Gammas(1)%t)
 call  mpstrace(Gammas, Lambdas, systemSize, localSize, chiMax,chiMax, tr)
-PRINT *, tr
+call  measureMz(Gammas, Lambdas, systemSize, localSize, chiMax,chiMax, Mz)
+PRINT *, tr, Mz,  Mz / tr
+OPEN(unit=14, file='RTPDATA/Mztest.dat',status='old', Access='append')
+WRITE(14, *)  tr, Mz
+CLOSE(14)
 
 END IF
 		END IF
@@ -285,20 +294,20 @@ END DO
 CALL SVDFinish()
 
 !Clean up
-CALL DeallocateGamLam(Gammas, Lambdas)
-CALL DestroyHeisenbergOps()
-IF(BoundaryCond=='O') THEN
-	CALL DeallocateOps(H,systemSize-1)
-ELSE
-	CALL DeallocateOps(H,systemSize)
-END IF
+!CALL DeallocateGamLam(Gammas, Lambdas)
+!CALL DestroyHeisenbergOps()
+!IF(BoundaryCond=='O') THEN
+!	CALL DeallocateOps(H,systemSize-1)
+!ELSE
+!	CALL DeallocateOps(H,systemSize)
+!END IF
 CALL DeallocateProp(Urtp)
 DEALLOCATE(coefArray)
 DEALLOCATE(mag)
 
 !End the timing routine
 CALL CPU_TIME(tock)
-PRINT *, 'XX dynamics Case study exited normally!'
+PRINT *, 'Case study exited normally!'
 PRINT *, 'Time taken=',tock-tick,'seconds!'
 
 contains
@@ -326,11 +335,57 @@ subroutine mpstrace(Gammas, Lambdas, length, d2, chi1, chi2, tr)
     !end do
     !if(size(mtx1,dim=2) /= size(mtx2,dim=1)) stop "input array sizenot match"
     do i=1,length
+    do j=1,chi1
+    mtx3(:,j) = mtx3(:,j) * Lambdas(i)%v(j)
+    end do
     !write(*,*) 'site ', i
     mtx3 =   matmul(mtx3,Gammas(i)%t(:,1,:) + Gammas(i)%t(:,d2,:))
-    do j=1,chi1
-    mtx3(:,j) = mtx3(:,j) *  Lambdas(i)%v(j)
+    !write(*,*) 'multiplication done!'
+    !do j=1,m3
+    !write(*,'(5F5.2)') (mtx3(j,k), k=1,m4)
+    !end do
     end do
+do i=1,chi1
+tr = tr + mtx3(i,i)
+end do
+
+    !do i=1,m3
+    !write(*,'(5F5.2)') (mtx3(i,j), j=1,m4)
+    !end do
+!write(*,*) tr
+end subroutine
+subroutine measureMz(Gammas, Lambdas, length, d2, chi1, chi2, tr)
+    implicit none
+    integer, intent(in)                         ::  length, d2, chi1, chi2
+    TYPE(tensor), POINTER, intent(in) :: Gammas(:)
+    TYPE(vector), POINTER, intent(in) :: Lambdas(:)
+    complex    ::  mtx3(chi1, chi2)
+    integer :: i,j, k
+    real, intent(out) :: tr
+    tr = 0
+    do i=1,chi1
+    do j=1,chi2
+        mtx3(i,j)=0
+        if (i == j) then
+        mtx3(i,j) = 1
+        end if
+    end do
+    end do
+
+    !do i=1,chi1
+    !write(*,'(5F5.2)') (mtx3(i,j), j=1,chi2)
+    !end do
+    !if(size(mtx1,dim=2) /= size(mtx2,dim=1)) stop "input array sizenot match"
+    do i=1,length
+    !write(*,*) 'site ', i
+    do j=1,chi1
+    mtx3(:,j) = mtx3(:,j) * Lambdas(i)%v(j)
+    end do
+    if (i == 3 ) then
+    mtx3 =   matmul(mtx3,Gammas(i)%t(:,1,:) - Gammas(i)%t(:,d2,:))
+    else 
+    mtx3 =   matmul(mtx3,Gammas(i)%t(:,1,:) + Gammas(i)%t(:,d2,:))
+    end if
     !write(*,*) 'multiplication done!'
     !do j=1,m3
     !write(*,'(5F5.2)') (mtx3(j,k), k=1,m4)
